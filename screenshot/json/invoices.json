@@ -1,0 +1,29 @@
+[
+  {
+    "userEmail": "john@test.com",
+    "customerName": "John Doe",
+    "customerEmail": "john@test.com",
+    "items": [
+      { "productName": "Men T-Shirt", "qty": 2, "price": 800 },
+      { "productName": "Men Jeans", "qty": 1, "price": 1200 }
+    ],
+    "subtotal": 2800,
+    "shipping": 100,
+    "total": 2900,
+    "paymentMethod": "cod",
+    "paymentStatus": "paid"
+  },
+  {
+    "userEmail": "jane@test.com",
+    "customerName": "Jane Smith",
+    "customerEmail": "jane@test.com",
+    "items": [
+      { "productName": "Women Dress", "qty": 1, "price": 1500 }
+    ],
+    "subtotal": 1500,
+    "shipping": 100,
+    "total": 1600,
+    "paymentMethod": "stripe",
+    "paymentStatus": "paid"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  { "name": "Clothing" },
+  { "name": "Electronics" },
+  { "name": "Home" },
+
+  { "name": "Men", "parentName": "Clothing" },
+  { "name": "Women", "parentName": "Clothing" },
+
+  { "name": "Mobiles", "parentName": "Electronics" },
+  { "name": "Laptops", "parentName": "Electronics" },
+
+  { "name": "Furniture", "parentName": "Home" },
+  { "name": "Kitchen", "parentName": "Home" }
+]

@@ -1,0 +1,35 @@
+client > 
+- npm i
+- npm i bun
+- bun dev
+
+server >
+- npm i
+- npm install -g nodemon
+or 
+- npm install nodemon --save-dev
+- nodmeon server.js
+
+
+Categories Done
+
+--> Force pull
+git fetch origin
+git reset --hard origin/main
+
+New Feature:
+    - Duplicate Product Create
+    - New product Create, Manage Done
+    - Categories 
+        - Parent, Child Categories Create Done
+        - Manage Categories Done.
+
+Reaming:
+Product Status
+    - Publish, Draft, Trash
+    - sell price reaming Frontend + backend too
+    - whishlist 
+    - after buy any product, product qty will decreasse
+- My Account Page
+- Multiple delete products asap
+- Product delete not working

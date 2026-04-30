@@ -1,0 +1,24 @@
+[
+  {
+    "userEmail": "john@test.com",
+    "address": "Surat, Gujarat, India",
+    "paymentMethods": [
+      {
+        "type": "cod",
+        "details": {}
+      }
+    ]
+  },
+  {
+    "userEmail": "jane@test.com",
+    "address": "Mumbai, Maharashtra, India",
+    "paymentMethods": [
+      {
+        "type": "stripe",
+        "details": {
+          "cardLast4": "4242"
+        }
+      }
+    ]
+  }
+]
