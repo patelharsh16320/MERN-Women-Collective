@@ -5,46 +5,85 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
 
-  useEffect(() => {
+  const loadUser = () => {
     try {
-      const raw = localStorage.getItem('user');
-      setUser(raw ? JSON.parse(raw) : null);
+      const raw = localStorage.getItem("user");
+      const parsed = raw ? JSON.parse(raw) : null;
+      setUser(parsed);
+
+      const cartKey = parsed?.email ? `cart_${parsed.email}` : "cart";
+      const cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+      setCartCount(cart.reduce((a, b) => a + (b.qty || 1), 0));
     } catch {
       setUser(null);
+      setCartCount(0);
     }
-    const onUserChange = () => {
-      try {
-        const raw = localStorage.getItem('user');
-        setUser(raw ? JSON.parse(raw) : null);
-      } catch { setUser(null); }
+  };
+
+  useEffect(() => {
+    loadUser();
+
+    window.addEventListener("userChanged", loadUser);
+    window.addEventListener("cartUpdated", loadUser);
+
+    return () => {
+      window.removeEventListener("userChanged", loadUser);
+      window.removeEventListener("cartUpdated", loadUser);
     };
-    window.addEventListener('userChanged', onUserChange);
-    return () => window.removeEventListener('userChanged', onUserChange);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    window.dispatchEvent(new Event('userChanged'));
-    window.location.href = '/account/login';
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("userChanged"));
+    window.location.href = "/account/login";
   };
 
   return (
-    <nav className="flex justify-between items-center p-4 shadow">
-      <Link href="/" className="text-xl font-bold">
-        Women Hub
-      </Link>
+    <header className="header">
+      <div className="container d-flex justify-content-between align-items-center py-3">
+        
+        {/* LOGO */}
+        <Link href="/" className="fw-bold fs-4">
+          Women Hub
+        </Link>
 
-      <div className="flex gap-6">
-        <Link href="/products">Products</Link>
-        <Link href="/cart">Cart</Link>
-        <Link href="/account">Account</Link>
-        {user ? (
-          <button className="btn btn-outline-dark ml-2" onClick={handleLogout}>Logout</button>
-        ) : (
-          <Link href="/account/signup" className="btn btn-dark ml-2">Signup</Link>
-        )}
+        {/* NAV */}
+        <div className="d-flex align-items-center gap-4">
+
+          <Link href="/products" className="nav-link">
+            Products
+          </Link>
+
+          <Link href="/cart" className="nav-link position-relative">
+            <i className="fas fa-shopping-cart"></i>
+            {cartCount > 0 && (
+              <span className="cart-badge">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+
+          {user ? (
+            <>
+              <Link href="/account" className="nav-link">
+                <i className="fas fa-user"></i>
+              </Link>
+              <button
+                className="btn-theme"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link href="/account/signup" className="btn-theme">
+              Signup
+            </Link>
+          )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

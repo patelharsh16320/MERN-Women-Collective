@@ -3,13 +3,19 @@
 import Link from "next/link";
 import AddToCartButton from "./AddToCartButton";
 import { useState, useEffect } from "react";
-import { addToWishlist, removeFromWishlist, getWishlist } from "../services/wishlistService";
+import {
+  addToWishlist,
+  removeFromWishlist,
+  getWishlist,
+} from "../services/wishlistService";
+
 function resolveImageUrl(imagePath) {
   if (!imagePath) return "";
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) return imagePath;
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-  const apiOrigin = (apiBase || "").replace(/\/api\/?$/i, "");
+  if (imagePath.startsWith("http")) return imagePath;
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+  const apiOrigin = apiBase.replace(/\/api\/?$/i, "");
 
   if (imagePath.startsWith("/uploads")) return `${apiOrigin}${imagePath}`;
   if (imagePath.startsWith("uploads")) return `${apiOrigin}/${imagePath}`;
@@ -21,19 +27,21 @@ export default function ProductCard({ product }) {
   const imgSrc = resolveImageUrl(product?.image || "");
 
   const hasDiscount =
-    product.sellPrice !== undefined &&
-    product.sellPrice !== null &&
-    product.sellPrice !== "" &&
+    product.sellPrice &&
     Number(product.sellPrice) < Number(product.price);
 
   const [inWishlist, setInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getWishlist().then(res => {
-      const wishlist = res.data?.wishlist || res.wishlist || [];
-      setInWishlist(wishlist.some(item => item._id === product._id));
-    }).catch(() => setInWishlist(false));
+    getWishlist()
+      .then((res) => {
+        const wishlist = res.data?.wishlist || [];
+        setInWishlist(
+          wishlist.some((item) => item._id === product._id)
+        );
+      })
+      .catch(() => setInWishlist(false));
   }, [product._id]);
 
   const handleWishlist = async () => {
@@ -46,84 +54,70 @@ export default function ProductCard({ product }) {
         await addToWishlist(product._id);
         setInWishlist(true);
       }
-    } catch (e) {
-      // Optionally show error
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="col">
-      <div className="card h-100 shadow-sm border-0">
+      <div className="product-card">
+
+        {/* IMAGE */}
         <Link href={`/products/${product._id}`}>
-          <img
-            src={imgSrc}
-            className="card-img-top"
-            alt={product.name}
-            style={{ height: "250px", objectFit: "cover" }}
-          />
+          <div className="product-img">
+            <img src={imgSrc} alt={product.name} />
+          </div>
         </Link>
-        <div className="card-body d-flex flex-column bg-light">
+
+        {/* CONTENT */}
+        <div className="product-body">
           <Link href={`/products/${product._id}`}>
-            <h5 className="card-title text-dark">{product.name}</h5>
+            <h6 className="product-title">{product.name}</h6>
           </Link>
-          <h6 className="fw-bold text-dark">
+
+          {/* PRICE */}
+          <div className="product-price">
             {hasDiscount ? (
               <>
-                <span style={{ textDecoration: "line-through", color: "#888", marginRight: 8 }}>
-                  ₹ {product.price}
-                </span>
-                <span style={{ color: "#d32f2f" }}>
-                  ₹ {product.sellPrice}
-                </span>
+                <span className="old">₹{product.price}</span>
+                <span className="new">₹{product.sellPrice}</span>
               </>
             ) : (
-              <>₹ {product.price}</>
+              <span>₹{product.price}</span>
             )}
-          </h6>
+          </div>
 
-          <p className="mb-1 text-dark">
-            ⭐ {product.rating} ({product.numReviews} reviews)
+          {/* RATING */}
+          <p className="product-rating">
+            ⭐ {product.rating || 0} ({product.numReviews || 0})
           </p>
 
-          <span className="badge bg-light text-dark mb-3">
-            {typeof product.category === "object" && product.category !== null ? (
-              <>
-                {product.category.name}
-                {Array.isArray(product.category.parent) && product.category.parent.length > 0 && (
-                  <>
-                    {" (Parent"}
-                    {product.category.parent.length > 1 ? "s" : ""}
-                    {": "}
-                    {product.category.parent.map(
-                      (parent, idx) => parent && parent.name ? parent.name : ""
-                    ).filter(Boolean).join(", ")}
-                    {")"}
-                  </>
-                )}
-              </>
-            ) : (
-              product.category
-            )}
-          </span>
+          {/* ACTIONS */}
+          <div className="product-actions">
+            <AddToCartButton
+              product={{
+                _id: product._id,
+                name: product.name,
+                price: product.price,
+                image: imgSrc,
+              }}
+              redirectToCart={false}
+            />
 
-          {/* Button */}
-          <div className="d-flex gap-2 mt-auto">
-            <AddToCartButton product={{ _id: product._id, name: product.name, price: product.price, image: imgSrc }} redirectToCart={false} />
             <button
-              className="btn btn-outline-danger"
-              style={{ minWidth: 40 }}
+              className="wishlist-btn"
               onClick={handleWishlist}
               disabled={loading}
-              title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
             >
               {inWishlist ? "♥" : "♡"}
             </button>
+
             <Link
               href={`/products/${product._id}`}
-              className="btn btn-dark"
+              className="btn-theme"
             >
-              View Product
+              View
             </Link>
           </div>
         </div>
