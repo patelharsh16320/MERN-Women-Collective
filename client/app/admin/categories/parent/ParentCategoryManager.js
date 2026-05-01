@@ -105,7 +105,7 @@ export default function ParentCategoryManager() {
   };
 
   return (
-    <div>
+    <div className="admin-parent-category">
       <form onSubmit={handleCreate} className="mb-3 d-flex gap-2">
         <input value={name} onChange={e => setName(e.target.value)} placeholder="New parent category" className="form-control" />
         <button className="btn btn-primary">Add</button>

@@ -43,11 +43,11 @@ export default function CreateCategoryPage() {
       <form onSubmit={submit} className="create-category-card">
         <div className="mb-3">
           <label className="block text-sm">Name</label>
-          <input className="w-full border px-2 py-1" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="mb-3">
           <label className="block text-sm">Parent Category (optional)</label>
-          <select className="w-full border px-2 py-1" value={parent} onChange={(e)=>setParent(e.target.value)}>
+          <select className="form-control" value={parent} onChange={(e)=>setParent(e.target.value)}>
             <option value="">-- None --</option>
             {parents.map(p => (
               <option key={p._id} value={p._id}>{p.name}</option>
