@@ -1,54 +1,105 @@
 "use client";
-import { useEffect } from "react";
-import { usePathname } from "next/navigation";
 
-// Only admin can access all pages. Normal user and logout user can only access these pages:
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+
+// Public / user accessible routes
 const USER_ALLOWED = [
-  "/", "/about", "/contact", "/products", "/products/", "/products/[id]", "/account/login", "/account/logout", "/account/signup", "/cart", "/orders", "/orders/[id]","/checkout","/invoices","invoices/[id]"
+  "/",
+  "/about",
+  "/contact",
+  "/products",
+  "/cart",
+  "/orders",
+  "/checkout",
+  "/invoices",
+  "/account/login",
+  "/account/signup",
+  "/account/logout"
 ];
 
+// Editor routes
 const EDITOR_ALLOWED = [
-  "/", "/about"
+  "/",
+  "/about"
 ];
 
+// Author routes
 const AUTHOR_ALLOWED = [
-  "/", "/cart", "/contact", "/products"
+  "/",
+  "/cart",
+  "/contact",
+  "/products"
 ];
+
+// helper for dynamic routes
+const isAllowedPath = (pathname, allowedRoutes) => {
+  return allowedRoutes.some((route) => {
+    return pathname === route || pathname.startsWith(route + "/");
+  });
+};
 
 export default function AppGuard({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const raw = localStorage.getItem("user");
-    const user = raw ? JSON.parse(raw) : null;
+let user = null;
 
-    // Admin can access all pages
-    if (user && user.role && user.role === "admin") {
+try {
+  const raw = localStorage.getItem("user");
+  if (raw && raw !== "undefined") {
+    user = JSON.parse(raw);
+  }
+} catch (err) {
+  console.warn("Invalid user in localStorage");
+  localStorage.removeItem("user");
+}
+
+    // ✅ Admin → allow all
+    if (user?.role === "admin") {
+      setLoading(false);
       return;
     }
 
-    // Editor access
-    if (user && user.role && user.role === "editor") {
-      const allowed = EDITOR_ALLOWED.some((p) => pathname === p || pathname.startsWith(p + "/"));
-      if (!allowed) {
-        window.location.href = "/";
+    // ✅ Editor
+    if (user?.role === "editor") {
+      if (!isAllowedPath(pathname, EDITOR_ALLOWED)) {
+        router.replace("/");
+        return;
       }
+      setLoading(false);
       return;
     }
 
-    // Author access
-    if (user && user.role && user.role === "author") {
-      const allowed = AUTHOR_ALLOWED.some((p) => pathname === p || pathname.startsWith(p + "/"));
-      if (!allowed) {
-        window.location.href = "/";
+    // ✅ Author
+    if (user?.role === "author") {
+      if (!isAllowedPath(pathname, AUTHOR_ALLOWED)) {
+        router.replace("/");
+        return;
       }
+      setLoading(false);
       return;
     }
 
-    // User or not logged in
-    const allowed = USER_ALLOWED.some((p) => pathname === p || pathname.startsWith(p + "/"));
-    if (!allowed) {
-      window.location.href = "/";
+    // ✅ Normal user / guest
+    if (!isAllowedPath(pathname, USER_ALLOWED)) {
+      router.replace("/");
+      return;
     }
-  }, [pathname]);
+
+    setLoading(false);
+  }, [pathname, router]);
+
+  // Prevent flicker
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <h4>Loading...</h4>
+      </div>
+    );
+  }
+
   return children;
 }

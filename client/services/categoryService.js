@@ -1,37 +1,23 @@
-
 import { fetchAPI } from "./api";
 
-// Get all categories or by parent
-export const getCategories = async (parent = undefined) => {
-  let url = "/categories";
-  if (parent !== undefined) url += `?parent=${parent}`;
-  return await fetchAPI(url);
-};
+// GET
+export const getCategories = () => fetchAPI("/categories");
 
-// Get single category (with children)
-export const getCategoryById = async (id) => {
-  return await fetchAPI(`/categories/${id}`);
-};
-
-// Create category (optionally with parent)
-export const createCategory = async (name, parent = null) => {
-  return await fetchAPI("/categories", {
+// CREATE
+export const createCategory = (name, parent = []) =>
+  fetchAPI("/categories", {
     method: "POST",
     body: JSON.stringify({ name, parent }),
-    headers: { "Content-Type": "application/json" },
   });
-};
 
-// Update category
-export const updateCategory = async (id, name, parent = null) => {
-  return await fetchAPI(`/categories/${id}` , {
-    method: "POST",
-    body: JSON.stringify({ name, parent }),
+// UPDATE
+export const updateCategory = (id, name, parent = []) =>
+  fetchAPI(`/categories/${id}`, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, parent: Array.isArray(parent) ? parent : [] }),
   });
-};
 
-// Delete category
-export const deleteCategory = async (id) => {
-  return await fetchAPI(`/categories/${id}`, { method: "DELETE" });
-};
+// DELETE
+export const deleteCategory = (id) =>
+  fetchAPI(`/categories/${id}`, { method: "DELETE" });

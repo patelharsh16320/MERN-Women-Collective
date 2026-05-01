@@ -13,11 +13,7 @@ export default function About() {
           <section className="about-section">
             <h2>Our Story</h2>
             <p>
-              Women Hub was founded in 2024 with a mission to empower women
-              by providing a curated selection of fashion, beauty, and
-              lifestyle products. Our platform connects women with the
-              latest trends, exclusive deals, and a supportive community.
-            </p>
+              Women Hub was founded in 2024 with a mission to empower women by providing a curated selection of fashion, beauty, and lifestyle products. Our platform connects women with the latest trends, exclusive deals, and a supportive community. </p>
           </section>
 
           {/* What We Offer */}

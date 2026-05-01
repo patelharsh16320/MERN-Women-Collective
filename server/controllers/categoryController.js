@@ -1,64 +1,30 @@
 const Category = require("../models/Category");
 
-/* CREATE */
-const createCategory = async (req, res) => {
+// CREATE
+exports.createCategory = async (req, res) => {
   try {
     const { name, parent } = req.body;
 
-    const category = await Category.create({
-      name,
+    if (!name) {
+      return res.status(400).json({ message: "Name required" });
+    }
+
+    // Prevent duplicate
+    const exists = await Category.findOne({
+      name: name.trim(),
       parent: parent || null,
     });
 
-    res.status(201).json(category);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-/* GET ALL */
-const getCategories = async (req, res) => {
-  try {
-    const categories = await Category.find()
-      .populate("parent", "name")
-      .sort({ createdAt: -1 });
-
-    res.json(categories);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-/* GET ONE */
-const getCategoryById = async (req, res) => {
-  try {
-    const category = await Category.findById(req.params.id).populate("parent");
-
-    if (!category)
-      return res.status(404).json({ message: "Category not found" });
-
-    const children = await Category.find({ parent: category._id });
-
-    res.json({ ...category.toObject(), children });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-/* UPDATE */
-const updateCategory = async (req, res) => {
-  try {
-    const { name, parent } = req.body;
-
-    if (parent && parent === req.params.id) {
-      return res.status(400).json({ message: "Cannot be own parent" });
+    if (exists) {
+      return res.status(400).json({ message: "Category already exists" });
     }
 
-    const category = await Category.findByIdAndUpdate(
-      req.params.id,
-      { name, parent },
-      { new: true }
-    );
+    const category = new Category({
+      name: name.trim(),
+      parent: parent || null,
+    });
+
+    await category.save();
 
     res.json(category);
   } catch (err) {
@@ -66,29 +32,63 @@ const updateCategory = async (req, res) => {
   }
 };
 
-/* DELETE */
-const deleteCategory = async (req, res) => {
+// GET ALL
+exports.getCategories = async (req, res) => {
   try {
-    const deleteRecursive = async (id) => {
-      const children = await Category.find({ parent: id });
-      for (let child of children) {
-        await deleteRecursive(child._id);
-      }
-      await Category.findByIdAndDelete(id);
-    };
-
-    await deleteRecursive(req.params.id);
-
-    res.json({ message: "Category deleted" });
+    const categories = await Category.find().populate("parent");
+    res.json(categories);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-module.exports = {
-  createCategory,
-  getCategories,
-  getCategoryById,
-  updateCategory,
-  deleteCategory,
+// GET SINGLE
+exports.getCategoryById = async (req, res) => {
+  try {
+    const cat = await Category.findById(req.params.id).populate("parent");
+    if (!cat) return res.status(404).json({ message: "Not found" });
+    res.json(cat);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// UPDATE
+exports.updateCategory = async (req, res) => {
+  try {
+    const { name, parent } = req.body;
+
+    const exists = await Category.findOne({
+      name: name.trim(),
+      parent: parent || null,
+      _id: { $ne: req.params.id },
+    });
+
+    if (exists) {
+      return res.status(400).json({ message: "Category already exists" });
+    }
+
+    const updated = await Category.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: name.trim(),
+        parent: parent || null,
+      },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// DELETE
+exports.deleteCategory = async (req, res) => {
+  try {
+    await Category.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };

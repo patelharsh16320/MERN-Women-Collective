@@ -38,10 +38,6 @@ export default function AdminLayout({ children }) {
       </aside>
 
       <div className="admin-main">
-        {/*  <header className="admin-topbar">
-          <h5>Admin Dashboard</h5>
-        </header> */}
-
         <main className="admin-content">
           {children}
         </main>

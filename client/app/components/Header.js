@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Navigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const USER_ALLOWED = [
   "/", "/about", "/contact", "/products", "/products/", "/products/[id]", "/account/login", "/account/logout", "/account/signup", "/cart", "/orders"
@@ -13,6 +14,7 @@ const ADMIN_ALLOWED = [
 export default function Header() {
   const [count, setCount] = useState(0);
   const [user, setUser] = useState(null);
+  const router = useRouter();
 
   const computeCount = () => {
     try {
@@ -80,15 +82,22 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    // Remove all cart keys (cart, cart_{email}) from localStorage
+    // Remove cart data
     Object.keys(localStorage).forEach((key) => {
       if (key === "cart" || key.startsWith("cart_")) {
         localStorage.removeItem(key);
       }
     });
+
+    // Remove user + token
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
+
+    // Notify app
     window.dispatchEvent(new Event("userChanged"));
-    // return <Navigate to="/login" replace />;
+
+    // Redirect to login
+    router.push("/account/login");
   };
 
   return (
@@ -111,24 +120,24 @@ export default function Header() {
           {/* Navbar Menu */}
           <div className="collapse navbar-collapse" id="navbarContent">
             <ul className="navbar-nav ms-auto align-items-lg-center">
-                  {/* Admin: show only /admin links */}
-                  {user && user.role === "admin" ? (
-                    <>
-                      {/* Dashboard Link */}
-                      <li className="nav-item">
-                        <Link href="/admin/" className="nav-link">
-                          Dashboard
-                        </Link>
-                      </li>
+              {/* Admin: show only /admin links */}
+              {user && user.role === "admin" ? (
+                <>
+                  {/* Dashboard Link */}
+                  <li className="nav-item">
+                    <Link href="/admin/" className="nav-link">
+                      Dashboard
+                    </Link>
+                  </li>
 
-                      {/* Products Link */}
-                      <li className="nav-item">
-                        <Link href="/products/" className="nav-link">
-                          Products
-                        </Link>
-                      </li>
+                  {/* Products Link */}
+                  <li className="nav-item">
+                    <Link href="/products/" className="nav-link">
+                      Products
+                    </Link>
+                  </li>
 
-                      {/* Categories Dropdown */}
+                  {/* Categories Dropdown */}
                   {/* <li className="nav-item dropdown">
                     <a
                       className="nav-link dropdown-toggle"
@@ -180,9 +189,9 @@ export default function Header() {
                       </li>
                     </ul>
                   </li> */}
-                 <Link href="/admin/orders" className="dropdown-item">
-                          All Orders
-                        </Link>
+                  <Link href="/admin/orders" className="dropdown-item">
+                    All Orders
+                  </Link>
                   {/* Admin Name */}
                   <li className="nav-item ms-lg-2">
                     <span className="nav-link fw-bold text-primary">

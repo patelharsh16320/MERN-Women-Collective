@@ -1,90 +1,149 @@
-import React, { useEffect, useState } from "react";
-import { getCategories, createCategory, deleteCategory } from "../../../services/categoryService";
-import { toastMessage } from "../../../utils/toastMessage";
+"use client";
 
+import { useState } from "react";
+import Link from "next/link";
+import { deleteCategory } from "@/services/categoryService";
 
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [parent, setParent] = useState("");
+export default function CategorySection({ categories = [], reload }) {
 
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await getCategories();
-      setCategories(Array.isArray(data) ? data : data.categories || []);
-    } catch (err) {
-      toastMessage.error(err.message || "Failed to load categories");
-    } finally {
-      setLoading(false);
+  const [selected, setSelected] = useState([]);
+
+  // ✅ Only parent categories
+  const parentCategories = categories.filter((c) => !c.parent);
+
+  // ✅ Select single
+  const toggleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id)
+        ? prev.filter((i) => i !== id)
+        : [...prev, id]
+    );
+  };
+
+  // ✅ Select all
+  const toggleSelectAll = () => {
+    if (selected.length === parentCategories.length) {
+      setSelected([]);
+    } else {
+      setSelected(parentCategories.map((c) => c._id));
     }
   };
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  // ✅ Delete single (SAFE)
+  const handleDelete = async (id) => {
+    if (!confirm("Delete category?")) return;
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) return toastMessage.error("Category name required");
     try {
-      await createCategory(name, parent || null);
-      setName("");
-      setParent("");
-      toastMessage.success("Category created");
-      loadCategories();
+      await deleteCategory(id);
+      reload && reload(); // ✅ FIX: safe call
     } catch (err) {
-      toastMessage.error(err.message || "Create failed");
+      alert(err.message || "Delete failed");
     }
   };
 
-  // Helper to build tree
-  const buildTree = (cats, parentId = null) => {
-    return cats.filter(c => (c.parent ? c.parent._id : null) === parentId).map(c => ({
-      ...c,
-      children: buildTree(cats, c._id)
-    }));
-  };
+  // ✅ Bulk delete (SAFE + FAST)
+  const handleBulkDelete = async () => {
+    if (selected.length === 0) return;
 
-  const renderTree = (nodes, level = 0) => {
-    return nodes.map(node => (
-      <li key={node._id} className="list-group-item d-flex justify-content-between align-items-center" style={{paddingLeft: 16 + level * 16}}>
-        <span onClick={() => onSelectCategory && onSelectCategory(node)} style={{cursor:'pointer'}}>{node.name}</span>
-        {node.children && node.children.length > 0 && (
-          <ul className="list-group w-100 mt-2">
-            {renderTree(node.children, level + 1)}
-          </ul>
-        )}
-      </li>
-    ));
+    if (!confirm(`Delete ${selected.length} categories?`)) return;
+
+    try {
+      // 🔥 Faster than loop
+      await Promise.all(selected.map((id) => deleteCategory(id)));
+
+      setSelected([]);
+      reload && reload(); // ✅ FIX
+    } catch (err) {
+      alert(err.message || "Bulk delete failed");
+    }
   };
 
   return (
-    <div className="category-section">
-      <h4>Categories</h4>
-      <form onSubmit={handleCreate} className="mb-3 d-flex gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="New category name"
-          className="form-control"
-        />
-        <select value={parent} onChange={e => setParent(e.target.value)} className="form-select" style={{maxWidth:200}}>
-          <option value="">No Parent (Top Level)</option>
-          {categories.filter(c => !c.parent).map(cat => (
-            <option key={cat._id} value={cat._id}>{cat.name}</option>
-          ))}
-        </select>
-        <button type="submit" className="btn btn-primary">Add</button>
-      </form>
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <ul className="list-group">
-          {renderTree(buildTree(categories))}
-        </ul>
-      )}
+    <div className="mb-5">
+
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5>Parent Categories</h5>
+
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-danger btn-sm"
+            disabled={selected.length === 0}
+            onClick={handleBulkDelete}
+          >
+            Delete Selected
+          </button>
+
+          <Link href="/admin/categories/create" className="btn btn-dark btn-sm">
+            + Add
+          </Link>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table className="table align-middle">
+
+        <thead className="table-light">
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                checked={
+                  selected.length === parentCategories.length &&
+                  parentCategories.length > 0
+                }
+                onChange={toggleSelectAll}
+              />
+            </th>
+            <th>Name</th>
+            <th className="text-end">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {parentCategories.length > 0 ? (
+            parentCategories.map((c) => (
+              <tr key={c._id}>
+
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(c._id)}
+                    onChange={() => toggleSelect(c._id)}
+                  />
+                </td>
+
+                <td>{c.name}</td>
+
+                <td className="text-end">
+                  <Link
+                    href={`/admin/categories/${c._id}/edit`}
+                    className="btn btn-sm btn-outline-dark me-2"
+                  >
+                    Edit
+                  </Link>
+
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(c._id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="3" className="text-center text-muted py-4">
+                No categories found
+              </td>
+            </tr>
+          )}
+
+        </tbody>
+      </table>
     </div>
   );
 }

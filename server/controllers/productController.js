@@ -17,7 +17,15 @@ const createProduct = async (req, res) => {
 // ================= GET ALL =================
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find()
+      .populate({
+        path: "category",
+        select: "name parent",
+        populate: {
+          path: "parent",
+          select: "name"
+        }
+      });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -27,7 +35,15 @@ const getProducts = async (req, res) => {
 // ================= GET ONE =================
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id)
+      .populate({
+        path: "category",
+        select: "name parent",
+        populate: {
+          path: "parent",
+          select: "name"
+        }
+      });
 
     if (!product)
       return res.status(404).json({ message: "Product not found" });

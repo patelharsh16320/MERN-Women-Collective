@@ -33,3 +33,29 @@ Product Status
 - My Account Page
 - Multiple delete products asap
 - Product delete not working
+
+
+
+Frontend:
+Done:
+- Login
+- logout
+- Signup
+- Dashboard
+- admin > product > Manage
+                > create
+                > Manage
+                > [id] 
+                    > edit
+- admin >  Categories
+
+
+Reaming:
+- Edit Product -- Prority
+- UI
+- admin > order
+- whishlist
+- checkout
+- cart 
+- order 
+- contact us

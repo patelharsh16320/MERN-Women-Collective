@@ -1,26 +1,26 @@
-// Utility to get/set/clear cart for the current user
 export function getCartKey(user) {
-  return user && user.email ? `cart_${user.email}` : 'cart';
+  return user?.email ? `cart_${user.email}` : "cart";
 }
 
 export function getUserCart(user) {
-  const cartKey = getCartKey(user);
   try {
-    const raw = localStorage.getItem(cartKey);
+    const raw = localStorage.getItem(getCartKey(user));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-export function clearUserCart(user) {
-  const cartKey = getCartKey(user);
-  localStorage.removeItem(cartKey);
-  try { window.dispatchEvent(new CustomEvent('cartUpdated', { detail: { cart: [] } })); } catch (e) {}
+export function setUserCart(user, cart) {
+  localStorage.setItem(getCartKey(user), JSON.stringify(cart));
+  window.dispatchEvent(
+    new CustomEvent("cartUpdated", { detail: { cart } })
+  );
 }
 
-export function setUserCart(user, cart) {
-  const cartKey = getCartKey(user);
-  localStorage.setItem(cartKey, JSON.stringify(cart));
-  try { window.dispatchEvent(new CustomEvent('cartUpdated', { detail: { cart } })); } catch (e) {}
+export function clearUserCart(user) {
+  localStorage.removeItem(getCartKey(user));
+  window.dispatchEvent(
+    new CustomEvent("cartUpdated", { detail: { cart: [] } })
+  );
 }

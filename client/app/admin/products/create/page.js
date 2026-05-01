@@ -6,9 +6,9 @@ import { toastMessage } from "../../../../utils/toastMessage";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "../../../../services/api";
 
-
 export default function CreateProduct() {
   const router = useRouter();
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -17,289 +17,236 @@ export default function CreateProduct() {
     category: "",
     countInStock: "",
   });
+
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [parentId, setParentId] = useState("");
 
   useEffect(() => {
-    async function loadCategories() {
+    const loadCategories = async () => {
       try {
-        const cats = await getCategories();
-        const all = Array.isArray(cats) ? cats : cats.categories || [];
-        setCategories(all);
-      } catch (e) {
-        setCategories([]);
+        const res = await getCategories();
+        const cats = Array.isArray(res) ? res : res.categories || [];
+        setCategories(cats);
+      } catch (err) {
+        toastMessage.error("Failed to load categories");
       }
-    }
+    };
     loadCategories();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     if (name === "price") {
-      // Price must be > 0, and sellPrice must be less than price
-      const newPrice = value <= 0 ? 1 : value;
+      const price = Math.max(Number(value), 1);
+
       setFormData((prev) => ({
         ...prev,
-        price: newPrice,
+        price,
         sellPrice:
-          prev.sellPrice !== "" && Number(prev.sellPrice) >= Number(newPrice)
+          prev.sellPrice && Number(prev.sellPrice) >= price
             ? ""
             : prev.sellPrice,
       }));
-    } else if (name === "sellPrice") {
-      // Sell price must be >= 0 and less than price
+    }
+
+    else if (name === "sellPrice") {
+      const sell = Number(value);
+
+      setFormData((prev) => {
+        // ❌ negative not allowed
+        if (sell < 0) return { ...prev, sellPrice: 0 };
+
+        // ❌ greater than price not allowed
+        if (sell >= Number(prev.price)) {
+          return { ...prev, sellPrice: "" }; // reset
+        }
+
+        return { ...prev, sellPrice: sell };
+      });
+    }
+
+    else {
       setFormData((prev) => ({
         ...prev,
-        sellPrice:
-          value < 0
-            ? 0
-            : Number(value) >= Number(prev.price)
-            ? prev.price > 1
-              ? prev.price - 1
-              : 0
-            : value,
-      }));
-    } else if (name === "countInStock") {
-      setFormData({
-        ...formData,
-        countInStock: value < 1 ? 1 : value,
-      });
-    } else {
-      setFormData({
-        ...formData,
         [name]: value,
-      });
+      }));
     }
   };
 
   const handleImage = (e) => {
     const file = e.target.files[0];
     setImage(file);
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    }
+    if (file) setPreview(URL.createObjectURL(file));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      // Ensure price > 0, sellPrice < price, countInStock >= 1
-      const safePrice = Math.max(Number(formData.price), 1);
-      let safeSellPrice = Number(formData.sellPrice);
-      if (isNaN(safeSellPrice) || safeSellPrice < 0) safeSellPrice = 0;
-      if (safeSellPrice >= safePrice) safeSellPrice = safePrice - 1;
-      const safeFormData = {
-        ...formData,
-        price: safePrice,
-        sellPrice: safeSellPrice,
-        countInStock: Math.max(Number(formData.countInStock), 1),
-      };
-      // If no category selected, set to 'General' (find by name)
-      let categoryId = safeFormData.category;
-      if (!categoryId) {
-        const generalCat = categories.find(c => c.name && c.name.toLowerCase() === "general");
-        if (generalCat) {
-          categoryId = generalCat._id || generalCat.id || generalCat.name;
-        }
+      const price = Math.max(Number(formData.price), 1);
+
+      let sellPrice = formData.sellPrice === ""
+        ? null
+        : Number(formData.sellPrice);
+
+      // ✅ enforce rules again
+      if (sellPrice !== null) {
+        if (sellPrice < 0) sellPrice = 0;
+        if (sellPrice >= price) sellPrice = null;
       }
+
       const data = new FormData();
-      Object.keys(safeFormData).forEach((key) => {
-        if (key === "category") {
-          data.append("category", categoryId || "");
+
+      Object.keys(formData).forEach((key) => {
+        if (key === "sellPrice") {
+          if (sellPrice !== null) data.append("sellPrice", sellPrice);
         } else {
-          data.append(key, safeFormData[key]);
+          data.append(key, formData[key]);
         }
       });
-      if (image) {
-        data.append("image", image);
+
+      if (image) data.append("image", image);
+
+
+      // If no category selected, set to General
+      if (!formData.category) {
+        const generalCat = categories.find(cat => cat.name === "General");
+        if (generalCat) {
+          data.set("category", generalCat._id);
+        }
       }
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-      const res = await fetch(`${API_URL}/products`, {
+
+      await fetchAPI("/products", {
         method: "POST",
         body: data,
       });
-      if (!res.ok) throw new Error("Failed");
-      router.replace("/products");
+
+      toastMessage.success("Product created!");
+      router.push("/admin/products/manage");
+
     } catch (err) {
-      console.error(err);
-      alert("❌ Error creating product");
+      toastMessage.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="admin-create-product">
+    <div className="container py-4">
 
-      {/* Dark Header */}
-      <div className="admin-header">
-        <h4 className="mb-0">Create New Product</h4>
-      </div>
+      <h3 className="mb-4">Create Product</h3>
 
-      <div className="container py-5">
+      <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
 
-        <form
-          className="card shadow-sm border-0 p-4"
-          onSubmit={handleSubmit}
-        >
+        <div className="mb-3">
+          <label>Name</label>
+          <input
+            name="name"
+            className="form-control"
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-          {/* Name */}
-          <div className="mb-3">
-            <label className="form-label-light fw-semibold">Product Name</label>
+        <div className="mb-3">
+          <label>Description</label>
+          <textarea
+            name="description"
+            className="form-control"
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="row">
+          <div className="col-md-4 mb-3">
+            <label>Price</label>
             <input
-              type="text"
-              name="name"
+              type="number"
+              name="price"
               className="form-control"
               onChange={handleChange}
               required
             />
           </div>
 
-          {/* Description */}
-          <div className="mb-3">
-            <label className="form-label-light fw-semibold">Description</label>
-            <textarea
-              name="description"
-              rows="3"
-              className="form-control"
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* Row Inputs */}
-          <div className="row">
-            <div className="col-md-4 mb-3">
-              <label className="form-label-light fw-semibold">Price</label>
-              <input
-                type="number"
-                name="price"
-                className="form-control"
-                min={1}
-                step="any"
-                value={formData.price}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="col-md-4 mb-3">
-              <label className="form-label-light fw-semibold">Sell Price</label>
-              <input
-                type="number"
-                name="sellPrice"
-                className="form-control"
-                min={0}
-                max={formData.price ? formData.price - 1 : undefined}
-                step="any"
-                value={formData.sellPrice}
-                onChange={handleChange}
-                
-                placeholder="Enter sell price (less than price)"
-              />
-              {formData.sellPrice !== "" && Number(formData.sellPrice) >= Number(formData.price) && (
-                <div className="text-danger small mt-1">
-                  Sell price must be less than original price.
-                </div>
-              )}
-            </div>
-
-            <div className="col-md-4 mb-3">
-              <label className="form-label-light fw-semibold">Stock</label>
-              <input
-                type="number"
-                name="countInStock"
-                className="form-control"
-                min={1}
-                step="1"
-                value={formData.countInStock}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Category Dropdown */}
-          <div className="mb-3">
-            <label className="form-label-light fw-semibold">Category</label>
-            <select
-              className="form-select"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-            >
-              <option value="">Select Category (optional)</option>
-              {/* Group categories: parents first, then children indented */}
-              {categories
-                .filter(cat => !cat.parent || (Array.isArray(cat.parent) && cat.parent.length === 0) || (Array.isArray(cat.parent) && cat.parent.some(p => p && p.name === "General")) || (cat.parent && cat.parent.name === "General"))
-                .map(parent => [
-                  <option key={parent._id} value={parent._id}>{parent.name}</option>,
-                  ...categories
-                    .filter(child => {
-                      if (Array.isArray(child.parent)) return child.parent.some(p => p && p._id === parent._id);
-                      return child.parent && child.parent._id === parent._id;
-                    })
-                    .map(child => (
-                      <option key={child._id} value={child._id}>&nbsp;&nbsp;&nbsp;↳ {child.name}</option>
-                    ))
-                ])}
-            </select>
-          </div>
-{/* 
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Category</label>
-            <select
-              className="form-select"
-              value={product.category}
-              onChange={(e) =>
-                setProduct({ ...product, category: e.target.value })
-              }
-              required
-            >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
-                <option
-                  key={cat._id || cat.id || cat.name}
-                  value={cat.name}
-                >
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div> */}
-        
-          {/* Image Upload */}
-          <div className="mb-4">
-            <label className="form-label-light fw-semibold">Product Image</label>
-
+          <div className="col-md-4 mb-3">
+            <label>Sell Price</label>
             <input
-              type="file"
+              type="number"
+              name="sellPrice"f
               className="form-control"
-              accept="image/*"
-              onChange={handleImage}
-              required
+              min={0}
+              max={formData.price ? formData.price - 1 : undefined}
             />
-
-            {preview && (
-              <div className="image-preview mt-3">
-                <img src={preview} alt="preview" />
-              </div>
-            )}
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-dark w-100 py-2 "
-            disabled={loading}
+          <div className="col-md-4 mb-3">
+            <label>Stock</label>
+            <input
+              type="number"
+              name="countInStock"
+              className="form-control"
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label>Parent Category</label>
+          <select
+            className="form-select"
+            value={parentId}
+            onChange={e => {
+              setParentId(e.target.value);
+              setFormData(prev => ({ ...prev, category: "" }));
+            }}
           >
-            {loading ? "Creating Product..." : "Create Product"}
-          </button>
+            <option value="">Select Parent (optional)</option>
+            {categories.filter(cat => !cat.parent || cat.parent.length === 0).map(cat => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-3">
+          <label>Child Category</label>
+          <select
+            name="category"
+            className="form-select"
+            value={formData.category}
+            onChange={handleChange}
+          >
+            <option value="">Select Child (optional)</option>
+            {categories.filter(cat => Array.isArray(cat.parent) && cat.parent.some(p => p._id === parentId)).map(cat => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
 
-        </form>
-      </div>
+        <div className="mb-3">
+          <label>Image</label>
+          <input
+            type="file"
+            className="form-control"
+            onChange={handleImage}
+            required
+          />
+
+          {preview && (
+            <img src={preview} width="100" className="mt-2" />
+          )}
+        </div>
+
+        <button className="btn btn-dark w-100" disabled={loading}>
+          {loading ? "Creating..." : "Create Product"}
+        </button>
+
+      </form>
     </div>
   );
 }

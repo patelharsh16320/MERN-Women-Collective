@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "../../../services/api";
+import { toastMessage } from "../../../utils/toastMessage";
 
 export default function SignupPage() {
   const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,20 +19,24 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
-      const user = await fetchAPI("/users", {
+      const response = await fetchAPI("/auth/signup", {
         method: "POST",
         body: JSON.stringify({ name, email, password }),
       });
 
-      // store user locally
-      if (typeof window !== "undefined") {
-        localStorage.setItem("userInfo", JSON.stringify(user));
-      }
+      // Save user
+      localStorage.setItem("user", JSON.stringify(response.user));
+      window.dispatchEvent(new Event("userChanged"));
 
-      router.push("/");
+      toastMessage.success("Account created!");
+
+      router.push("/account/login");
+
     } catch (err) {
-      setError(err.message || "Could not create account");
+      setError(err.message || "Signup failed");
+      toastMessage.error(err.message || "Signup failed");
     } finally {
       setLoading(false);
     }
@@ -39,25 +45,29 @@ export default function SignupPage() {
   return (
     <div className="signup-wrapper">
       <div className="signup-card">
-        <h2 className="signup-title">Create Account</h2>
 
-        {error && <div className="signup-error">{error}</div>}
+        <h2>Create Account</h2>
 
-        <form onSubmit={submit} className="signup-form">
-          <div className="form-group">
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        <form onSubmit={submit}>
+
+          <div className="mb-3">
             <label>Name</label>
             <input
               type="text"
+              className="form-control"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-group">
+          <div className="mb-3">
             <label>Email</label>
             <input
               type="email"
+              className="form-control"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -65,39 +75,38 @@ export default function SignupPage() {
           </div>
 
           <div className="mb-3" style={{ position: "relative" }}>
-            <label className="form-label">Password</label>
+            <label>Password</label>
             <input
               type={showPassword ? "text" : "password"}
-              className="form-control custom-input"
-              placeholder="Enter your password"
+              className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
+              onClick={() => setShowPassword(!showPassword)}
               style={{
                 position: "absolute",
                 right: 10,
                 top: 35,
-                background: "none",
                 border: "none",
-                padding: 0,
-                cursor: "pointer",
+                background: "none",
+                cursor: "pointer"
               }}
-              tabIndex={-1}
             >
               {showPassword ? "🙈" : "👁️"}
             </button>
           </div>
 
-          <button type="submit" disabled={loading} className="signup-btn">
-            {loading ? "Creating..." : "Sign Up"}
+          <button className="btn btn-dark w-100" disabled={loading}>
+            {loading ? "Creating..." : "Signup"}
           </button>
-          <p className="login-footer">
-            Already have an account? <a href="/account/login">Sign in</a>
+
+          <p className="text-center mt-3">
+            Already have an account? <a href="/account/login">Login</a>
           </p>
+
         </form>
       </div>
     </div>

@@ -12,6 +12,7 @@ export default function UsersListPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selected, setSelected] = useState([]);
 
   const loadUsers = async () => {
     try {
@@ -30,8 +31,8 @@ export default function UsersListPage() {
   }, []);
 
   const handleDelete = async (id) => {
-  toastMessage.info("Are you sure you want to delete this user?");
-  if (!window.confirm("Are you sure you want to delete this user?")) return;
+    toastMessage.info("Are you sure you want to delete this user?");
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       await fetchAPI(`/users/${id}`, { method: "DELETE" });
       setUsers((s) => s.filter((u) => u._id !== id && u.id !== id));
@@ -40,7 +41,37 @@ export default function UsersListPage() {
       const newTotalPages = Math.ceil(newTotal / ITEMS_PER_PAGE);
       if (currentPage > newTotalPages) setCurrentPage(Math.max(1, newTotalPages));
     } catch (err) {
-  toastMessage.error(err.message || "Delete failed");
+      toastMessage.error(err.message || "Delete failed");
+    }
+  };
+
+  // Multi-select logic
+  const toggleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+  const toggleSelectAll = () => {
+    const ids = paginatedUsers.map((u) => u._id || u.id);
+    if (selected.length === ids.length) {
+      setSelected([]);
+    } else {
+      setSelected(ids);
+    }
+  };
+  const handleBulkDelete = async () => {
+    if (selected.length === 0) return;
+    if (!window.confirm(`Delete ${selected.length} users?`)) return;
+    try {
+      await Promise.all(selected.map((id) => fetchAPI(`/users/${id}`, { method: "DELETE" })));
+      setUsers((s) => s.filter((u) => !selected.includes(u._id) && !selected.includes(u.id)));
+      setSelected([]);
+      // Adjust page if needed
+      const newTotal = users.length - selected.length;
+      const newTotalPages = Math.ceil(newTotal / ITEMS_PER_PAGE);
+      if (currentPage > newTotalPages) setCurrentPage(Math.max(1, newTotalPages));
+    } catch (err) {
+      toastMessage.error(err.message || "Bulk delete failed");
     }
   };
 
@@ -81,9 +112,23 @@ export default function UsersListPage() {
       {error && <p className="text-red-600">{error}</p>}
 
       <div className="users-card">
+        <button
+          className="btn btn-danger btn-sm mb-2"
+          disabled={selected.length === 0}
+          onClick={handleBulkDelete}
+        >
+          Delete Selected
+        </button>
         <table className="users-table">
           <thead className="bg-gray-100">
             <tr>
+              <th className="p-2 text-left">
+                <input
+                  type="checkbox"
+                  checked={selected.length === paginatedUsers.length && paginatedUsers.length > 0}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="p-2 text-left">Index</th>
               <th className="p-2 text-left">Name</th>
               <th className="p-2 text-left">Email</th>
@@ -94,6 +139,13 @@ export default function UsersListPage() {
           <tbody>
             {paginatedUsers.map((u, index) => (
               <tr key={u._id || u.id} className="border-t">
+                <td className="p-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(u._id || u.id)}
+                    onChange={() => toggleSelect(u._id || u.id)}
+                  />
+                </td>
                 <td className="p-2">{startIndex+index + 1}</td>
                 <td className="p-2">{u.name}</td>
                 <td className="p-2">{u.email}</td>
@@ -106,7 +158,7 @@ export default function UsersListPage() {
             ))}
             {!loading && paginatedUsers.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-500">No users found.</td>
+                <td colSpan={6} className="p-4 text-center text-gray-500">No users found.</td>
               </tr>
             )}
           </tbody>

@@ -15,7 +15,7 @@ const category = require("../controllers/categoryController");
 const invoice = require("../controllers/invoiceController");
 const userDetails = require("../controllers/userDetailsController");
 const wishlist = require("../controllers/wishlistController");
-const User = require("../models/User");
+const Category = require("../models/Category");
 
 // ================= AUTH =================
 router.post("/auth/signup", user.signup);
@@ -81,51 +81,4 @@ router.get("/wishlist", auth, wishlist.getWishlist);
 router.post("/wishlist/add", auth, wishlist.addToWishlist);
 router.post("/wishlist/remove", auth, wishlist.removeFromWishlist);
 
-// ================= WISHLIST CONTROLLERS =================
-exports.addToWishlist = async (req, res) => {
-  const { productId } = req.body;
-  const user = await User.findById(req.user._id);
-  if (!user.wishlist.includes(productId)) {
-    user.wishlist.push(productId);
-    await user.save();
-  }
-  res.json(user.wishlist);
-};
-
-exports.removeFromWishlist = async (req, res) => {
-  const { productId } = req.body;
-  const user = await User.findById(req.user._id);
-  user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
-  await user.save();
-  res.json(user.wishlist);
-};
-
-exports.getWishlist = async (req, res) => {
-  const user = await User.findById(req.user._id).populate("wishlist");
-  res.json(user.wishlist);
-};
-
 module.exports = router;
-
-exports.addToWishlist = async (req, res) => {
-  const { productId } = req.body;
-  const user = await User.findById(req.user._id);
-  if (!user.wishlist.includes(productId)) {
-    user.wishlist.push(productId);
-    await user.save();
-  }
-  res.json(user.wishlist);
-};
-
-exports.removeFromWishlist = async (req, res) => {
-  const { productId } = req.body;
-  const user = await User.findById(req.user._id);
-  user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
-  await user.save();
-  res.json(user.wishlist);
-};
-
-exports.getWishlist = async (req, res) => {
-  const user = await User.findById(req.user._id).populate("wishlist");
-  res.json(user.wishlist);
-};
