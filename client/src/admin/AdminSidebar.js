@@ -9,6 +9,7 @@ const AdminSidebar = () => (
         <li style={{ marginBottom: 16 }}><Link to="/admin/products">Products</Link></li>
         <li style={{ marginBottom: 16 }}><Link to="/admin/products/create">Create Product</Link></li>
         <li style={{ marginBottom: 16 }}><Link to="/admin/categories">Categories</Link></li>
+        <li style={{ marginBottom: 16 }}><Link to="/admin/orders">Orders</Link></li>
         <li style={{ marginBottom: 16 }}><Link to="/admin/users">Users</Link></li>
       </ul>
     </nav>

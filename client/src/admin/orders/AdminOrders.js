@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from "react";
+import { fetchOrders } from "../../api";
 import AdminSidebar from "../AdminSidebar";
-import { fetchCategories } from "../../api";
 
-const AdminCategories = () => {
-  const [categories, setCategories] = useState([]);
+const AdminOrders = () => {
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const getCategories = async () => {
+    const getOrders = async () => {
       try {
-        const data = await fetchCategories();
-        setCategories(data);
+        const data = await fetchOrders();
+        setOrders(data);
       } catch (err) {
-        setError("Failed to fetch categories");
+        setError("Failed to fetch orders");
       } finally {
         setLoading(false);
       }
     };
-    getCategories();
+    getOrders();
   }, []);
 
   return (
     <div style={{ display: "flex" }}>
       <AdminSidebar />
       <main style={{ flex: 1, padding: 32 }}>
-        <h2>Manage Categories</h2>
+        <h2>All Orders</h2>
         {loading ? (
           <div>Loading...</div>
         ) : error ? (
@@ -34,13 +34,21 @@ const AdminCategories = () => {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f6f6f6" }}>
-                <th>Name</th>
+                <th>Order ID</th>
+                <th>User</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
               </tr>
             </thead>
             <tbody>
-              {categories.map((c, idx) => (
-                <tr key={c._id || idx}>
-                  <td>{c.name}</td>
+              {orders.map((o) => (
+                <tr key={o._id}>
+                  <td>{o._id}</td>
+                  <td>{o.user?.name || o.user}</td>
+                  <td>₹{o.total}</td>
+                  <td>{o.status}</td>
+                  <td>{o.payment}</td>
                 </tr>
               ))}
             </tbody>
@@ -51,4 +59,4 @@ const AdminCategories = () => {
   );
 };
 
-export default AdminCategories;
+export default AdminOrders;

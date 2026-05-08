@@ -1,3 +1,4 @@
+import AdminOrders from './admin/orders/AdminOrders';
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import About from "./About";
@@ -28,6 +29,7 @@ import AdminProducts from "./admin/products/AdminProducts";
 import AdminCreateProduct from "./admin/products/AdminCreateProduct";
 import AdminCategories from "./admin/categories/AdminCategories";
 import AdminUsers from "./admin/users/AdminUsers";
+import AllProducts from "./AllProducts";
 
 const App = () => {
   const theme = {
@@ -82,7 +84,9 @@ const App = () => {
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/products/create" element={<AdminCreateProduct />} />
               <Route path="/admin/categories" element={<AdminCategories />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/all-products" element={<AllProducts />} />
               <Route path="*" element={<ErrorPage />} />
             </Routes>
             <Footer />
