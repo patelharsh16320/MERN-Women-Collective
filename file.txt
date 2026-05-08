@@ -8,8 +8,6 @@ nodemon server.js
 
 
 
-
-
 create folder where all product, categoiers, new user create 
 checkout page
 order page
@@ -17,9 +15,13 @@ invoice page
 admin page with all functionality of product, categories create
 
 
-
-
 Reaming:
-- min max filter on all product page
-- Now i want too add sell price feild on create , update manege product feild. also this will show Product and manege product page. 
+Fronend:
+    - min max filter on all product page
+    - Now i want too add sell price feild on create , update manege product feild. also this will show Product and manege product page. 
 - Full backend
+
+
+To import some dummy data into all table into backend
+cd server 
+node .\config\seed.js
