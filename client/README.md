@@ -1,7 +1,3 @@
-# Welcome to Thapa Technical React Ecommerce Webstie Series 
-
-## Follow the 3 Steps and your good to go. 
-
 1: Clone the Project 
 
 2: simply run the command 

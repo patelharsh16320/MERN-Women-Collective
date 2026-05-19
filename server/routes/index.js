@@ -7,6 +7,7 @@ const categoryController = require('../controllers/categoryController');
 const orderController = require('../controllers/orderController');
 const wishlistController = require('../controllers/wishlistController');
 const invoiceController = require('../controllers/invoiceController');
+const authController = require('../controllers/authController');
 
 // User routes
 router.get('/users', userController.getAllUsers);
@@ -49,5 +50,11 @@ router.post('/invoices', invoiceController.createInvoice);
 router.get('/invoices/:id', invoiceController.getInvoiceById);
 router.put('/invoices/:id', invoiceController.updateInvoice);
 router.delete('/invoices/:id', invoiceController.deleteInvoice);
+
+// Signup
+router.post('/signup', authController.signup);
+
+// Login
+router.post('/login', authController.login);
 
 module.exports = router;
